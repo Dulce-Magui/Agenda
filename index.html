@@ -1,835 +1,632 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Timeline Continuo - Agenda Compartida</title>
-    <style>
-        :root {
-            --bg: #0f0f12;
-            --card: #18181c;
-            --card-border: #26262e;
-            --text: #f3f3f7;
-            --text-muted: #8e8e99;
-            --accent: #3b82f6;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c12">
+<title>Timeline Continuo – Agenda Compartida</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0a0c12; --surface:#12151f; --surface2:#171b28; --head:#0f1220;
+  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.13);
+  --txt:#eef0f6; --mut:#8b91a7;
+  --gold:#f5c451; --sel:#5aa7f0; --now:#f26d6d;
+  --ary:#ff9f43; --magui:#34d3b0;
+  --dayw:1536px; --labelw:46px; --padw:32px;
+  --r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none;touch-action:manipulation}
+button:active{transform:scale(.97)}
+input,select,textarea{font:inherit}
 
-            /* Categorías Base */
-            --c-seguridad: #64748b;   /* Azul Grisáceo */
-            --c-descanso: #3b82f6;    /* Azul */
-            --c-comida: #ef4444;      /* Rojo */
-            --c-pasteleria: #ec4899;   /* Rosa */
-            --c-limpieza: #10b981;    /* Verde */
-            --c-perros: #f59e0b;      /* Ámbar */
-            --c-libre: #8b5cf6;       /* Violeta */
-        }
+header{position:sticky;top:0;z-index:50;background:rgba(10,12,18,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 14px}
+.brandline{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.logo{font-size:19px}.brand{font-size:13.5px;font-weight:700}
+.grow{flex:1}
+.iconbtn{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--surface2);border:1px solid var(--border)}
+.monthline{display:flex;align-items:center;gap:8px}
+.navbtn{width:42px;height:42px;border-radius:13px;flex:0 0 auto;background:var(--surface2);border:1px solid var(--border);font-size:20px;color:var(--mut);display:flex;align-items:center;justify-content:center}
+.navbtn:active{color:var(--gold)}
+.monthlabel{flex:1;text-align:center;font-size:16.5px;font-weight:800;padding:9px 4px;border-radius:13px;background:var(--surface);border:1px solid var(--border)}
+.todaybtn{flex:0 0 auto;font-size:13px;font-weight:700;color:var(--gold);background:rgba(245,196,81,.1);border:1px solid rgba(245,196,81,.3);padding:10px 14px;border-radius:13px}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+main{max-width:520px;margin:0 auto;padding:14px 12px 110px}
 
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            padding-bottom: 90px;
-        }
+.boardwrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.board{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none}
+.board::-webkit-scrollbar{display:none}
+.strip{position:relative;width:max-content;min-width:100%}
+.cols{position:relative;margin:0 var(--padw);width:max-content}
+.row{display:flex;width:max-content}
+.head{background:var(--head)}
+.sticky-col{position:sticky;left:0;z-index:8;flex:0 0 auto;width:var(--labelw)}
+.corner{display:flex;align-items:center;justify-content:center;background:var(--head);border-right:1px solid var(--border);font-size:15px}
 
-        /* Header Rediseñado */
-        header {
-            position: sticky;
-            top: 0;
-            background: rgba(24, 24, 28, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--card-border);
-            padding: 0.75rem 1rem;
-            z-index: 100;
-        }
+/* Día: banda ancha con escala horaria 00..24 */
+.day-head{position:relative;flex:0 0 var(--dayw);width:var(--dayw);height:50px;border-right:1px solid var(--border);cursor:pointer;user-select:none}
+.day-head.wknd{background:rgba(255,255,255,.02)}
+.day-head.today{background:linear-gradient(180deg,rgba(245,196,81,.15),rgba(245,196,81,.05));box-shadow:inset 0 -3px 0 var(--gold)}
+.day-head.sel{box-shadow:inset 0 0 0 2px var(--sel)}
+.dh-date{position:absolute;left:9px;top:6px;display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.dh-date .dow{font-size:8.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--mut)}
+.dh-date .num{font-size:17px;font-weight:800}
+.day-head.today .dh-date .num{color:var(--gold)}
+.day-head.sel .dh-date .num{color:var(--sel)}
+.dh-tick{position:absolute;bottom:6px;font-size:9.5px;color:var(--mut);transform:translateX(-50%);font-variant-numeric:tabular-nums;font-style:normal}
+.dh-tick.big{color:#cdd3e8;font-weight:700}
 
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.6rem;
-        }
+.lane{border-top:1px solid var(--border);background:var(--surface)}
+.lanetag{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--surface);border-right:1px solid var(--border);box-shadow:6px 0 12px -8px rgba(0,0,0,.6)}
+.lanetag .dot{width:9px;height:9px;border-radius:50%}
+.lane[data-p="ary"] .dot{background:var(--ary)}
+.lane[data-p="magui"] .dot{background:var(--magui)}
+.lanetag .nm{font-size:10px;font-weight:800}
+.lanecanvas{position:relative;width:max-content}
+.grid-layer{position:absolute;inset:0;display:flex}
+/* rejilla: horas cada 64px (marcadas) y 30 min cada 32px */
+.gcell{flex:0 0 var(--dayw);width:var(--dayw);border-right:1px solid var(--border);cursor:pointer;
+  background-image:
+    repeating-linear-gradient(to right, transparent 0 63px, rgba(255,255,255,.15) 63px 64px),
+    repeating-linear-gradient(to right, transparent 0 31px, rgba(255,255,255,.07) 31px 32px);
+}
+.gcell.wknd{background-color:rgba(120,150,255,.04)}
+.gcell.today{background-color:rgba(245,196,81,.08)}
+.gcell.sel{background-color:rgba(90,167,240,.13);box-shadow:inset 0 0 0 2px var(--sel)}
+.blocks-layer{position:absolute;inset:0;pointer-events:none}
+.block{position:absolute;height:26px;border-radius:7px;display:flex;align-items:center;gap:5px;padding:0 7px;font-size:11px;color:#fff;overflow:hidden;white-space:nowrap;pointer-events:auto;cursor:pointer;border:1px solid rgba(0,0,0,.35);box-shadow:0 2px 5px rgba(0,0,0,.35);text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.block .b-em{font-size:12px}
+.block .b-tx{overflow:hidden;text-overflow:ellipsis}
+.block b{font-weight:800}
+.midmark{position:absolute;top:-1px;bottom:-1px;width:0;border-left:2px dashed rgba(255,255,255,.55);pointer-events:none}
+.pad{position:absolute;top:0;bottom:0;width:var(--padw);z-index:9;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--mut);background:var(--surface2)}
+.padl{left:0;border-right:1px dashed var(--border2)}
+.padr{right:0;border-left:1px dashed var(--border2)}
+.nowline{position:absolute;top:0;bottom:0;width:2px;background:var(--now);z-index:4;pointer-events:none;box-shadow:0 0 8px var(--now)}
+.nowline::before{content:"";position:absolute;top:0;left:-3px;width:8px;height:8px;border-radius:50%;background:var(--now)}
 
-        .header-top h1 {
-            font-size: 0.95rem;
-            font-weight: 700;
-        }
+.panel{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px 14px;min-height:130px}
+.panelhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.panelhead h2{font-size:15.5px}
+#panelSub{font-size:11.5px;color:var(--mut)}
+.panellist{display:grid;gap:10px}
+.empty{border:1.5px dashed var(--border2);border-radius:12px;padding:20px 16px;text-align:center;color:var(--mut);font-size:13px;line-height:1.6}
+.card{background:var(--surface2);border:1px solid var(--border);border-left:4px solid var(--pc,#888);border-radius:12px;padding:11px 12px}
+.cardtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.time{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:11px;background:#0c0f18;border:1px solid var(--border);border-radius:7px;padding:3px 8px;white-space:nowrap}
+.time b{color:var(--gold)}
+.c-actions{display:flex;gap:4px}
+.mini{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--mut);background:rgba(255,255,255,.03)}
+.mini:active{background:rgba(255,255,255,.08);color:#fff}
+.cardtitle{display:flex;align-items:center;gap:7px;font-size:14px}
+.c-emoji{font-size:16px}
+.cardchips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
+.pchip{font-size:9.5px;font-weight:800;letter-spacing:.4px;color:#0a1220;border-radius:99px;padding:3px 9px;text-transform:uppercase}
+.cat-name{font-size:10px;border:1px solid;border-radius:99px;padding:2px 8px;opacity:.9}
+.c-notes{margin-top:7px;font-size:12px;color:var(--mut);line-height:1.45}
 
-        /* Botones Secundarios (Semanal / Mensual) */
-        .time-mode-selector {
-            display: flex;
-            justify-content: center;
-            gap: 6px;
-            margin-bottom: 0.5rem;
-        }
+.fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;z-index:60;background:linear-gradient(135deg,#5aa7f0,#3f6fd8);color:#fff;font-size:28px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(63,111,216,.45)}
+.fab:active{transform:scale(.92)}
 
-        .mode-btn {
-            background: #101014;
-            border: 1px solid var(--card-border);
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .mode-btn.active {
-            background: rgba(59, 130, 246, 0.2);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        /* Botón Principal HOY */
-        .btn-today-container {
-            display: flex;
-            justify-content: center;
-        }
-
-        .btn-today {
-            background: var(--accent);
-            color: white;
-            border: none;
-            font-size: 0.85rem;
-            font-weight: 700;
-            padding: 0.45rem 1.8rem;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-        }
-
-        /* Contenedor Scroll Horizontal */
-        .timeline-scroll-area {
-            overflow-x: auto;
-            background: #121216;
-            border-bottom: 1px solid var(--card-border);
-            padding: 1rem 0;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-        }
-
-        .timeline-wrapper {
-            padding: 0 1rem;
-            position: relative;
-        }
-
-        .time-header {
-            display: flex;
-            margin-left: 70px;
-            border-bottom: 1px solid var(--card-border);
-            padding-bottom: 0.3rem;
-            margin-bottom: 0.5rem;
-            position: relative;
-        }
-
-        .time-slot-label {
-            flex-shrink: 0;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            border-left: 1px dashed #26262e;
-            padding-left: 6px;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        .time-slot-label.today-label {
-            color: var(--accent);
-            font-weight: 800;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 4px 4px 0 0;
-        }
-
-        .track-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.6rem;
-        }
-
-        .track-label {
-            width: 70px;
-            flex-shrink: 0;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text);
-            position: sticky;
-            left: 0;
-            background: #121216;
-            z-index: 5;
-            padding-right: 5px;
-        }
-
-        .track-canvas {
-            position: relative;
-            height: 42px;
-            background: #18181c;
-            border-radius: 8px;
-            border: 1px solid var(--card-border);
-            width: 100%;
-        }
-
-        /* Botones Extensores en la Línea */
-        .expand-btn {
-            position: absolute;
-            top: 0;
-            height: 100%;
-            width: 60px;
-            background: rgba(38, 38, 46, 0.8);
-            border: 1px dashed var(--accent);
-            color: var(--accent);
-            font-size: 0.7rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            cursor: pointer;
-            z-index: 10;
-            border-radius: 6px;
-        }
-
-        .expand-btn.left { left: 70px; }
-        .expand-btn.right { right: 0; }
-
-        /* Punto Único de Hora Actual */
-        .now-dot {
-            position: absolute;
-            top: -5px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #ef4444;
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
-            z-index: 20;
-            pointer-events: none;
-            transform: translateX(-50%);
-        }
-
-        /* Bloques en la Línea */
-        .block-item {
-            position: absolute;
-            height: 100%;
-            border-radius: 6px;
-            padding: 0 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            overflow: hidden;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* Feed de Notas abajo */
-        .notes-section {
-            padding: 1rem;
-        }
-
-        .notes-section h2 {
-            font-size: 0.95rem;
-            color: var(--text-muted);
-            margin-bottom: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .notes-feed {
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-        }
-
-        .note-card {
-            background: var(--card);
-            border: 1px solid var(--card-border);
-            border-left: 4px solid var(--accent);
-            border-radius: 10px;
-            padding: 0.75rem 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .note-tag {
-            font-size: 0.65rem;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: #26262e;
-            color: var(--text);
-            display: inline-block;
-            margin-bottom: 0.3rem;
-        }
-
-        .note-title { font-size: 0.9rem; font-weight: 600; }
-        .note-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
-
-        .note-text {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            background: #101014;
-            padding: 0.4rem 0.6rem;
-            border-radius: 6px;
-            margin-top: 0.4rem;
-        }
-
-        /* FAB y Modal */
-        .fab {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            background: var(--accent);
-            color: white;
-            border-radius: 50%;
-            border: none;
-            font-size: 1.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-            z-index: 101;
-            cursor: pointer;
-        }
-
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.75);
-            display: flex;
-            align-items: flex-end;
-            z-index: 200;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-        }
-
-        .modal.open { opacity: 1; pointer-events: auto; }
-
-        .modal-content {
-            background: var(--card);
-            width: 100%;
-            border-radius: 20px 20px 0 0;
-            padding: 1.25rem;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-
-        .form-group { margin-bottom: 0.8rem; }
-        .form-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.2rem; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 0.7rem;
-            background: #101014;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 0.9rem;
-            outline: none;
-        }
-
-        .btn-submit {
-            width: 100%;
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 0.8rem;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-top: 0.4rem;
-            cursor: pointer;
-        }
-
-        .custom-item-box {
-            background: #101014;
-            border: 1px dashed var(--card-border);
-            border-radius: 8px;
-            padding: 0.75rem;
-            margin-top: 0.5rem;
-            display: none;
-        }
-        .custom-item-box.active { display: block; }
-
-        /* Categorías */
-        .bg-seguridad { background-color: var(--c-seguridad); }
-        .bg-descanso { background-color: var(--c-descanso); }
-        .bg-comida { background-color: var(--c-comida); }
-        .bg-pasteleria { background-color: var(--c-pasteleria); }
-        .bg-limpieza { background-color: var(--c-limpieza); }
-        .bg-perros { background-color: var(--c-perros); }
-        .bg-libre { background-color: var(--c-libre); }
-    </style>
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.sheet{width:100%;max-width:520px;background:var(--surface);border-radius:22px 22px 0 0;max-height:92dvh;display:flex;flex-direction:column;animation:slideup .28s cubic-bezier(.2,.8,.2,1);box-shadow:0 -10px 40px rgba(0,0,0,.4)}
+@keyframes slideup{from{transform:translateY(60px);opacity:.4}}
+.grab{width:42px;height:5px;border-radius:99px;background:rgba(255,255,255,.18);margin:10px auto 0;flex:0 0 auto}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 8px;flex:0 0 auto}
+.sheet-head h3{font-size:16px}
+.sheet-body{overflow-y:auto;padding:4px 20px 12px;flex:1;overscroll-behavior:contain}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field>span{font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--mut);text-transform:uppercase}
+.field input,.field select,.field textarea{background:#0c0f18;border:1px solid var(--border2);border-radius:11px;color:var(--txt);padding:12px 13px;font-size:16px;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--sel);border-color:transparent}
+.field input[type=color]{padding:4px;height:48px;width:64px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.onote{font-size:11.5px;color:var(--gold);margin:-6px 0 14px}
+.persons{display:flex;gap:8px}
+.popt{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:12px;border:1.5px solid var(--border2);background:#0c0f18;color:var(--mut);font-weight:700;font-size:14px;transition:.15s}
+.popt .pdot{width:10px;height:10px;border-radius:50%}
+.popt.active[data-p="ary"]{background:rgba(255,159,67,.14);border-color:var(--ary);color:var(--ary)}
+.popt.active[data-p="magui"]{background:rgba(52,211,176,.14);border-color:var(--magui);color:var(--magui)}
+.pnote{font-size:10.5px;color:var(--mut);margin-top:6px}
+.newcat{background:#0c0f18;border:1px dashed #35507e;border-radius:12px;padding:12px;margin-bottom:14px;display:grid;gap:10px}
+.newcat .row2{grid-template-columns:1fr 70px 60px}
+.sheet-foot{display:flex;align-items:center;gap:10px;padding:12px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--border);flex:0 0 auto}
+.btn{border-radius:12px;padding:13px 16px;font-size:14.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn.ghost{background:var(--surface2);border:1px solid var(--border);color:var(--mut)}
+.btn.danger{background:rgba(242,109,109,.12);border:1px solid rgba(242,109,109,.35);color:#ff9d9d}
+.btn.primary{flex:1;background:linear-gradient(135deg,#5aa7f0,#3f6fd8);color:#fff;box-shadow:0 4px 14px rgba(63,111,216,.35)}
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(16px);background:#0c0f18;border:1px solid #35507e;padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.5);white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%)}
+</style>
 </head>
 <body>
 
-    <header>
-        <div class="header-top">
-            <h1>Agenda Compartida</h1>
-            <button id="btnExport" style="background:transparent; border:none; color:var(--accent); font-size:0.8rem; font-weight:600; cursor:pointer;">Guardar JSON</button>
+<header>
+  <div class="brandline">
+    <span class="logo">🗓️</span>
+    <span class="brand">Agenda Compartida</span>
+    <span class="grow"></span>
+    <button class="iconbtn" id="btnSaveJson" aria-label="Guardar JSON">💾</button>
+    <button class="iconbtn" id="btnLoadJson" aria-label="Cargar JSON">📂</button>
+    <input type="file" id="fileLoad" accept=".json,application/json" hidden>
+  </div>
+  <div class="monthline">
+    <button class="navbtn" id="btnPrev" aria-label="Mes anterior">‹</button>
+    <div class="monthlabel" id="monthLabel">—</div>
+    <button class="navbtn" id="btnNext" aria-label="Mes siguiente">›</button>
+    <button class="todaybtn" id="btnToday">📍 Hoy</button>
+  </div>
+</header>
+
+<main>
+  <div class="boardwrap">
+    <div class="board" id="board">
+      <div class="strip">
+        <button class="pad padl" id="padPrev" aria-label="Mes anterior">‹</button>
+        <button class="pad padr" id="padNext" aria-label="Mes siguiente">›</button>
+        <div class="cols" id="cols">
+          <div class="row head" id="headRow"></div>
+          <div class="row lane" data-p="ary">
+            <div class="lanetag sticky-col"><span class="dot"></span><span class="nm">Ary</span></div>
+            <div class="lanecanvas" id="canvas_ary"></div>
+          </div>
+          <div class="row lane" data-p="magui">
+            <div class="lanetag sticky-col"><span class="dot"></span><span class="nm">Magui</span></div>
+            <div class="lanecanvas" id="canvas_magui"></div>
+          </div>
+          <div class="nowline" id="nowLine"></div>
         </div>
-
-        <!-- Selector Secundario (Semanal / Mensual) -->
-        <div class="time-mode-selector">
-            <button class="mode-btn active" id="btnModeWeekly">Semanal (±7 días)</button>
-            <button class="mode-btn" id="btnModeMonthly">Mensual (±30 días)</button>
-        </div>
-
-        <!-- Botón Principal HOY -->
-        <div class="btn-today-container">
-            <button class="btn-today" id="btnGoToday">📍 HOY</button>
-        </div>
-    </header>
-
-    <!-- Línea de Tiempo Continuo -->
-    <div class="timeline-scroll-area" id="scrollContainer">
-        <div class="timeline-wrapper" id="timelineWrapper">
-            <!-- Horas/Días -->
-            <div class="time-header" id="timeHeader"></div>
-
-            <!-- Track Ary -->
-            <div class="track-row">
-                <div class="track-label">Ary</div>
-                <div class="track-canvas" id="canvasA"></div>
-            </div>
-
-            <!-- Track Magui -->
-            <div class="track-row">
-                <div class="track-label">Magui</div>
-                <div class="track-canvas" id="canvasB"></div>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Feed Único Inferior -->
-    <main class="notes-section">
-        <h2 id="feedTitle">Actividades Registradas</h2>
-        <div class="notes-feed" id="notesFeed"></div>
-    </main>
-
-    <button class="fab" id="openModal">+</button>
-
-    <!-- Modal Formulario -->
-    <div class="modal" id="eventModal">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                <h3>Agendar Bloque</h3>
-                <button id="closeModal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer;">✕</button>
-            </div>
-            <form id="eventForm">
-                <div class="form-group">
-                    <label>Fecha del Evento:</label>
-                    <input type="date" id="eventDate" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Asignado a:</label>
-                    <select id="person">
-                        <option value="A">Ary</option>
-                        <option value="B">Magui</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Categoría / Actividad:</label>
-                    <select id="categorySelect" onchange="toggleCustomCategory(this.value)">
-                        <option value="seguridad">🛡️ Servicio Seguridad (12 hs)</option>
-                        <option value="descanso">😴 Descanso / Sueño</option>
-                        <option value="comida">🍲 Cocina / Comida</option>
-                        <option value="pasteleria">🧁 Pastelería / Producción</option>
-                        <option value="limpieza">🧹 Mantenimiento / Limpieza</option>
-                        <option value="perros">🐶 Paseo de Perras</option>
-                        <option value="libre">☕ Tiempo Libre / Personal</option>
-                        <option value="custom">➕ Crear Ítem Personalizado...</option>
-                    </select>
-                </div>
-
-                <div class="custom-item-box" id="customBox">
-                    <div class="form-group">
-                        <label>Nombre del Ítem / Categoría:</label>
-                        <input type="text" id="customName" placeholder="Ej. Trámites / Estudio">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Emoji:</label>
-                            <input type="text" id="customEmoji" placeholder="📌" value="📌" maxlength="2">
-                        </div>
-                        <div class="form-group">
-                            <label>Color:</label>
-                            <input type="color" id="customColor" value="#06b6d4" style="height: 40px; padding: 2px;">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Inicio (30 min):</label>
-                        <select id="startTime"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Fin (30 min):</label>
-                        <select id="endTime"></select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Título de la rutina:</label>
-                    <input type="text" id="title" placeholder="Ej. Turno Noche / Patrulla" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Notas extra / Detalles:</label>
-                    <textarea id="notes" rows="3" placeholder="Anotaciones necesarias..."></textarea>
-                </div>
-
-                <button type="submit" class="btn-submit">Guardar en la Línea</button>
-            </form>
-        </div>
+  <section class="panel">
+    <div class="panelhead">
+      <h2 id="panelTitle">📅 —</h2>
+      <span id="panelSub"></span>
     </div>
+    <div class="panellist" id="panelList"></div>
+  </section>
+</main>
 
-    <script>
-        const baseCategories = {
-            seguridad: { emoji: '🛡️', name: 'Seguridad', class: 'bg-seguridad', color: '#64748b' },
-            descanso: { emoji: '😴', name: 'Descanso', class: 'bg-descanso', color: '#3b82f6' },
-            comida: { emoji: '🍲', name: 'Comida', class: 'bg-comida', color: '#ef4444' },
-            pasteleria: { emoji: '🧁', name: 'Pastelería', class: 'bg-pasteleria', color: '#ec4899' },
-            limpieza: { emoji: '🧹', name: 'Limpieza', class: 'bg-limpieza', color: '#10b981' },
-            perros: { emoji: '🐶', name: 'Paseo Perras', class: 'bg-perros', color: '#f59e0b' },
-            libre: { emoji: '☕', name: 'Tiempo Libre', class: 'bg-libre', color: '#8b5cf6' }
-        };
+<button class="fab" id="btnAdd" aria-label="Agendar bloque">＋</button>
 
-        let appData = JSON.parse(localStorage.getItem('timeline_shared_data')) || {};
-        let customCategories = JSON.parse(localStorage.getItem('timeline_custom_cats')) || {};
+<div class="overlay" id="overlay" role="dialog" aria-modal="true">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <h3 id="modalTitle">＋ Agendar Bloque</h3>
+      <button class="iconbtn" id="btnClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="sheet-body">
+      <label class="field"><span>Fecha del Evento</span><input type="date" id="fDate"></label>
 
-        let viewMode = 'weekly';
-        let daysBefore = 7;
-        let daysAfter = 7;
-        
-        // ANCHO FIJO PERMANENTE POR DÍA (800px) para mantener siempre la misma escala visual
-        const dayWidthPx = 800;
+      <div class="field"><span>Asignado a</span>
+        <div class="persons" id="personPick">
+          <button type="button" class="popt" data-p="ary"><span class="pdot" style="background:var(--ary)"></span>Ary</button>
+          <button type="button" class="popt" data-p="magui"><span class="pdot" style="background:var(--magui)"></span>Magui</button>
+        </div>
+        <span class="pnote">Podés seleccionar Ary y Magui a la vez.</span>
+      </div>
 
-        const timeHeader = document.getElementById('timeHeader');
-        const canvasA = document.getElementById('canvasA');
-        const canvasB = document.getElementById('canvasB');
-        const notesFeed = document.getElementById('notesFeed');
-        const eventModal = document.getElementById('eventModal');
-        const timelineWrapper = document.getElementById('timelineWrapper');
-        const scrollContainer = document.getElementById('scrollContainer');
+      <label class="field"><span>Categoría / Actividad</span><select id="selCat"></select></label>
+      <div id="catNewBox" hidden>
+        <div class="newcat">
+          <label class="field" style="margin:0"><span>Nombre del Ítem</span><input id="iCatName" placeholder="Ej: Estudio"></label>
+          <div class="row2">
+            <label class="field" style="margin:0"><span>Emoji</span><input id="iCatEmoji" placeholder="📚" maxlength="4"></label>
+            <label class="field" style="margin:0"><span>Color</span><input type="color" id="iCatColor" value="#5c7cfa"></label>
+          </div>
+          <button class="btn ghost" id="btnAddCat" style="justify-content:center">Añadir categoría</button>
+        </div>
+      </div>
+      <div class="row2">
+        <label class="field"><span>Inicio (30 min)</span><select id="selStart"></select></label>
+        <label class="field"><span>Fin (30 min)</span><select id="selEnd"></select></label>
+      </div>
+      <div class="onote" id="overnightHint" hidden>🌙 Finaliza al día siguiente</div>
+      <label class="field"><span>Título de la rutina</span><input id="fTitle" placeholder="Ej: Guardia nocturna"></label>
+      <label class="field"><span>Notas extra / Detalles</span><textarea id="fNotes" rows="2" placeholder="Detalles opcionales…"></textarea></label>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn danger" id="btnDelete" hidden>🗑</button>
+      <button class="btn ghost" id="btnCancel">Cancelar</button>
+      <button class="btn primary" id="btnSaveEvent">Guardar en la Línea</button>
+    </div>
+  </div>
+</div>
 
-        function getTodayStr() {
-            return new Date().toISOString().split('T')[0];
-        }
+<div class="toast" id="toast"></div>
 
-        function init() {
-            document.getElementById('eventDate').value = getTodayStr();
-            populateTimeDropdowns();
-            renderCustomCategoryOptions();
+<script>
+'use strict';
+const SLOT_W = 32, DAY_W = 48 * SLOT_W, PAD = 32, LABEL_W = 46, ROW_H = 30; // día = 1536 px
+const STORE_KEY = 'agenda.timeline.v2';
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DOW   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const PERSONAS = { ary:{nombre:'Ary',color:'#ff9f43'}, magui:{nombre:'Magui',color:'#34d3b0'} };
+const CATS = [
+  {id:'seguridad',  emoji:'🛡️', nombre:'Servicio Seguridad (12 hs)', color:'#4c6ef5'},
+  {id:'descanso',   emoji:'😴', nombre:'Descanso / Sueño',           color:'#845ef7'},
+  {id:'cocina',     emoji:'🍲', nombre:'Cocina / Comida',            color:'#f59f00'},
+  {id:'pasteleria', emoji:'🧁', nombre:'Pastelería / Producción',    color:'#e64980'},
+  {id:'limpieza',   emoji:'🧹', nombre:'Mantenimiento / Limpieza',   color:'#20c997'},
+  {id:'paseo',      emoji:'🐶', nombre:'Paseo de Perras',            color:'#74b816'},
+  {id:'libre',      emoji:'☕', nombre:'Tiempo Libre / Personal',    color:'#c08552'}
+];
 
-            document.getElementById('btnGoToday').addEventListener('click', scrollToToday);
-            document.getElementById('btnModeWeekly').addEventListener('click', () => setMode('weekly'));
-            document.getElementById('btnModeMonthly').addEventListener('click', () => setMode('monthly'));
+const $ = s => document.querySelector(s);
+const p2 = n => String(n).padStart(2,'0');
+const iso = d => `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+const parseISO = s => { const [a,b,c] = s.split('-').map(Number); return new Date(a, b-1, c); };
+const fmtMin = m => `${p2(Math.floor(m/60)%24)}:${p2(m%60)}`;
+const fmtEnd = m => m === 1440 ? '24:00' : fmtMin(m);
+const parseHM = s => { const [h,m] = String(s).split(':').map(Number); return h*60 + m; };
+const uid = () => 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-            document.getElementById('openModal').addEventListener('click', () => {
-                document.getElementById('eventDate').value = getTodayStr();
-                eventModal.classList.add('open');
-            });
-            document.getElementById('closeModal').addEventListener('click', () => eventModal.classList.remove('open'));
-            document.getElementById('eventForm').addEventListener('submit', handleAddEvent);
-            document.getElementById('btnExport').addEventListener('click', exportData);
+function evRange(e){
+  const s = parseHM(e.start);
+  let en = parseHM(e.end);
+  const overnight = en <= s;
+  if(overnight) en += 1440;
+  return { s, en, dur: en - s, overnight };
+}
 
-            render();
-            setTimeout(scrollToToday, 200);
-        }
+let toastTimer;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200); }
 
-        function setMode(mode) {
-            viewMode = mode;
-            if (mode === 'weekly') {
-                daysBefore = 7;
-                daysAfter = 7;
-                document.getElementById('btnModeWeekly').classList.add('active');
-                document.getElementById('btnModeMonthly').classList.remove('active');
-            } else {
-                daysBefore = 30;
-                daysAfter = 30;
-                document.getElementById('btnModeMonthly').classList.add('active');
-                document.getElementById('btnModeWeekly').classList.remove('active');
-            }
-            render();
-            scrollToToday();
-        }
+let events = [], customCats = [];
+const hoy0 = new Date();
+let view = { y: hoy0.getFullYear(), m: hoy0.getMonth() };
+let selectedDate = iso(hoy0);
+let editingId = null;
+let cellMap = {};
 
-        function expandRange(direction) {
-            const step = viewMode === 'weekly' ? 7 : 30;
-            if (direction === 'left') daysBefore += step;
-            if (direction === 'right') daysAfter += step;
-            render();
-        }
+const getCat = id => CATS.find(c=>c.id===id) || customCats.find(c=>c.id===id) || {emoji:'📌',nombre:'Otro',color:'#5c7cfa'};
 
-        function getRangeDays() {
-            let days = [];
-            let today = new Date(getTodayStr() + "T00:00:00");
+function normEv(e){
+  const pm = {'sujeto a':'ary','sujeto b':'magui','sujetoa':'ary','sujetob':'magui','a':'ary','b':'magui'};
+  const per = String(e.person||'').toLowerCase();
+  return { id:e.id||uid(), date:String(e.date||'').slice(0,10),
+    person: PERSONAS[per]?per:(pm[per]||'ary'), cat:e.cat||'libre',
+    start:e.start||'08:00', end:e.end||'09:00', title:e.title||'', notes:e.notes||'' };
+}
+function persist(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify({events, customCats})); }catch(e){} }
+function loadStore(){
+  try{ const d=JSON.parse(localStorage.getItem(STORE_KEY));
+    if(d && Array.isArray(d.events)){ events=d.events.filter(e=>e&&e.date).map(normEv); customCats=Array.isArray(d.customCats)?d.customCats:[]; return true; }
+  }catch(e){}
+  return false;
+}
+function seed(){
+  const t=iso(new Date()), m=iso(new Date(Date.now()+864e5));
+  events=[
+    {id:uid(),date:t,person:'ary',cat:'seguridad',start:'08:00',end:'14:00',title:'Servicio mañana',notes:''},
+    {id:uid(),date:t,person:'ary',cat:'seguridad',start:'19:00',end:'07:00',title:'Guardia nocturna',notes:'Pasa al día siguiente'},
+    {id:uid(),date:t,person:'magui',cat:'pasteleria',start:'09:00',end:'12:30',title:'Producción de tortas',notes:'Pedido para el sábado'},
+    {id:uid(),date:t,person:'magui',cat:'paseo',start:'18:00',end:'19:00',title:'Paseo de la tarde',notes:''},
+    {id:uid(),date:m,person:'ary',cat:'cocina',start:'12:00',end:'14:00',title:'Almuerzo familiar',notes:''}
+  ];
+}
 
-            for (let i = daysBefore; i > 0; i--) {
-                let d = new Date(today);
-                d.setDate(d.getDate() - i);
-                days.push(d.toISOString().split('T')[0]);
-            }
+function renderMonthLabel(){ $('#monthLabel').textContent = `${MESES[view.m]} ${view.y}`; }
+function daysInView(){ return new Date(view.y, view.m+1, 0).getDate(); }
 
-            days.push(getTodayStr());
+function renderBoard(){
+  const n = daysInView(); cellMap = {};
+  const todayIso = iso(new Date());
+  const head = $('#headRow');
+  head.innerHTML = '<div class="corner sticky-col">📅</div>';
+  for(let d=1; d<=n; d++){
+    const dt = new Date(view.y, view.m, d), ds = iso(dt);
+    const cell = document.createElement('div');
+    cell.className = 'day-head' + ((dt.getDay()===0||dt.getDay()===6)?' wknd':'') + (ds===todayIso?' today':'') + (ds===selectedDate?' sel':'');
+    const date = document.createElement('span');
+    date.className='dh-date';
+    date.innerHTML = `<span class="dow">${DOW[dt.getDay()]}</span><span class="num">${d}</span>`;
+    cell.appendChild(date);
+    for(let h=0; h<=24; h++){
+      const t=document.createElement('i');
+      t.className='dh-tick'+(h%6===0?' big':'');
+      t.textContent=p2(h);
+      t.style.left=(h/24*100)+'%';
+      if(h===0) t.style.transform='translateX(3px)';
+      else if(h===24) t.style.transform='translateX(calc(-100% - 3px))';
+      else t.style.transform='translateX(-50%)';
+      cell.appendChild(t);
+    }
+    cell.addEventListener('click',()=>selectDate(ds));
+    head.appendChild(cell);
+    cellMap[ds]={head:cell,cells:[]};
+  }
+  buildLane('ary',n,todayIso);
+  buildLane('magui',n,todayIso);
+  updateNowLine();
+}
 
-            for (let i = 1; i <= daysAfter; i++) {
-                let d = new Date(today);
-                d.setDate(d.getDate() + i);
-                days.push(d.toISOString().split('T')[0]);
-            }
+function buildLane(person,n,todayIso){
+  const canvas = $('#canvas_'+person);
+  canvas.innerHTML=''; canvas.style.width=(n*DAY_W)+'px';
+  const grid=document.createElement('div'); grid.className='grid-layer';
+  const blocks=document.createElement('div'); blocks.className='blocks-layer';
+  for(let d=1; d<=n; d++){
+    const dt=new Date(view.y,view.m,d), ds=iso(dt);
+    const c=document.createElement('div');
+    c.className='gcell'+(d%2?' odd':'')+((dt.getDay()===0||dt.getDay()===6)?' wknd':'')+(ds===todayIso?' today':'')+(ds===selectedDate?' sel':'');
+    c.addEventListener('click',ev=>{
+      if(ds===selectedDate){
+        const mins=Math.max(0,Math.min(1410,Math.floor((ev.offsetX/DAY_W)*48)*30));
+        openModal({date:ds,person,start:fmtMin(mins),end:fmtEnd(Math.min(1440,mins+60))});
+      } else selectDate(ds);
+    });
+    grid.appendChild(c);
+    if(cellMap[ds]) cellMap[ds].cells.push(c);
+  }
 
-            return days;
-        }
+  const prefix=`${view.y}-${p2(view.m+1)}-`;
+  const prevLast=iso(new Date(view.y,view.m,0));
+  const evs=[];
+  events.forEach(e=>{
+    if(e.person!==person) return;
+    const {s,en,overnight}=evRange(e);
+    if(e.date.startsWith(prefix)){
+      const day=parseInt(e.date.slice(8),10);
+      evs.push({e,s,en,overnight,absS:(day-1)*1440+s,absE:(day-1)*1440+en});
+    } else if(e.date===prevLast && overnight){
+      evs.push({e,s,en,overnight,absS:-1440+s,absE:en-1440});
+    }
+  });
 
-        function scrollToToday() {
-            const todayIndex = daysBefore;
-            const now = new Date();
-            const minProgress = (now.getHours() * 60 + now.getMinutes()) / 1440;
+  evs.sort((a,b)=>a.absS-b.absS||a.absE-b.absE);
+  const ends=[];
+  evs.forEach(o=>{ let r=0; while(r<ends.length&&ends[r]>o.absS) r++; ends[r]=o.absE; o.row=r; });
+  const maxRows=ends.length||1;
+  canvas.style.height=Math.max(66,16+maxRows*ROW_H)+'px';
 
-            const todayLeftPx = 70 + (todayIndex * dayWidthPx) + (minProgress * dayWidthPx);
-            const containerWidth = scrollContainer.clientWidth;
+  evs.forEach(o=>{
+    const cat=getCat(o.e.cat);
+    let left=o.absS/1440*DAY_W;
+    let right=o.absE/1440*DAY_W;
+    if(left<0) left=0;
+    if(right>n*DAY_W) right=n*DAY_W;
+    if(right-left<=2) return;
+    const width=Math.max(10,right-left-2);
+    const b=document.createElement('div');
+    b.className='block';
+    b.style.cssText=`left:${left}px;width:${width}px;top:${7+o.row*ROW_H}px;background:${cat.color}`;
+    const rangeStr=`${o.e.start}–${o.e.end}${o.overnight?' (+1 día)':''}`;
+    b.title=`${cat.emoji} ${o.e.title}\n${rangeStr} · ${PERSONAS[person].nombre}`+(o.e.notes?`\n📝 ${o.e.notes}`:'');
+    let inner=`<span class="b-em">${cat.emoji}</span>`;
+    if(width>=200) inner+=`<span class="b-tx"><b>${o.e.start} → ${o.e.end}${o.overnight?' 🌙':''}</b> ${esc(o.e.title)}</span>`;
+    else if(width>=85) inner+=`<span class="b-tx"><b>${o.e.start}–${o.e.end}${o.overnight?' 🌙':''}</b></span>`;
+    else if(width>=40) inner+=`<span class="b-tx"><b>${o.e.start}</b></span>`;
+    b.innerHTML=inner;
+    if(o.overnight && o.absS>=0){
+      const midnightAbs=(Math.floor(o.absS/1440)+1)*1440;
+      if(midnightAbs<o.absE && midnightAbs<n*1440){
+        const mk=document.createElement('span');
+        mk.className='midmark';
+        mk.style.left=((midnightAbs-o.absS)/1440*DAY_W)+'px';
+        b.appendChild(mk);
+      }
+    }
+    b.addEventListener('click',ev=>{ev.stopPropagation();openModal({ev:o.e});});
+    blocks.appendChild(b);
+  });
+  canvas.appendChild(grid); canvas.appendChild(blocks);
+}
 
-            scrollContainer.scrollLeft = todayLeftPx - (containerWidth / 2);
-        }
+function renderSelection(){
+  Object.entries(cellMap).forEach(([d,m])=>{
+    const on=d===selectedDate;
+    m.head.classList.toggle('sel',on);
+    m.cells.forEach(c=>c.classList.toggle('sel',on));
+  });
+}
+function updateNowLine(){
+  const line=$('#nowLine'), now=new Date();
+  const visible=now.getFullYear()===view.y&&now.getMonth()===view.m;
+  line.style.display=visible?'block':'none';
+  if(visible){
+    const frac=(now.getHours()*60+now.getMinutes())/1440;
+    line.style.left=(LABEL_W+(now.getDate()-1+frac)*DAY_W)+'px';
+  }
+}
+setInterval(updateNowLine,30000);
 
-        function timeToMin(timeStr) {
-            if (timeStr === '23:59') return 1440;
-            const [h, m] = timeStr.split(':').map(Number);
-            return h * 60 + m;
-        }
+function selectDate(ds){ selectedDate=ds; renderSelection(); renderPanel(); }
 
-        function toggleCustomCategory(val) {
-            const box = document.getElementById('customBox');
-            if (val === 'custom') box.classList.add('active');
-            else box.classList.remove('active');
-        }
+function renderPanel(){
+  const dt=parseISO(selectedDate);
+  $('#panelTitle').textContent=`📅 ${cap(DIAS[dt.getDay()])} ${dt.getDate()} ${MESES[dt.getMonth()].toLowerCase()}`;
+  const list=events.filter(e=>e.date===selectedDate).sort((a,b)=>parseHM(a.start)-parseHM(b.start));
+  const totalMin=list.reduce((t,e)=>t+evRange(e).dur,0);
+  $('#panelSub').textContent=list.length?`${list.length} bloque${list.length>1?'s':''} · ${(totalMin/60).toLocaleString('es-AR',{maximumFractionDigits:1})} hs`:'Sin actividades';
+  const box=$('#panelList'); box.innerHTML='';
+  if(!list.length){
+    box.innerHTML=`<div class="empty">No hay actividades anotadas para este día.<br><span>Tocá <b>＋</b> o tocá dos veces el día en la línea para crear un bloque.</span></div>`;
+    return;
+  }
+  list.forEach(e=>{
+    const p=PERSONAS[e.person]||PERSONAS.ary, cat=getCat(e.cat), ov=evRange(e).overnight;
+    const card=document.createElement('div'); card.className='card'; card.style.setProperty('--pc',p.color);
+    card.innerHTML=`
+      <div class="cardtop">
+        <span class="time">${e.start} → ${e.end}${ov?' <b>(+1)</b>':''}</span>
+        <span class="c-actions">
+          <button class="mini" data-act="edit" aria-label="Editar">✎</button>
+          <button class="mini" data-act="del" aria-label="Eliminar">🗑</button>
+        </span>
+      </div>
+      <div class="cardtitle"><span class="c-emoji">${cat.emoji}</span><b>${esc(e.title)}</b></div>
+      <div class="cardchips">
+        <span class="pchip" style="background:${p.color}">${p.nombre}</span>
+        <span class="cat-name" style="border-color:${cat.color};color:${cat.color}">${esc(cat.nombre)}</span>
+      </div>
+      ${e.notes?`<div class="c-notes">📝 ${esc(e.notes)}</div>`:''}`;
+    card.querySelector('[data-act=edit]').onclick=()=>openModal({ev:e});
+    card.querySelector('[data-act=del]').onclick=()=>deleteEvent(e.id);
+    box.appendChild(card);
+  });
+}
+function deleteEvent(id){
+  const e=events.find(x=>x.id===id); if(!e) return;
+  if(!confirm(`¿Eliminar el bloque "${e.title||getCat(e.cat).nombre}"?`)) return;
+  events=events.filter(x=>x.id!==id); persist(); renderBoard(); renderPanel(); toast('Bloque eliminado 🗑');
+}
 
-        function renderCustomCategoryOptions() {
-            const select = document.getElementById('categorySelect');
-            select.querySelectorAll('.dynamic-custom').forEach(opt => opt.remove());
+function scrollToDay(idx,smooth=true,minuteOffset=720){
+  const board=$('#board'); const visW=board.clientWidth-LABEL_W;
+  const x=PAD+LABEL_W+idx*DAY_W + minuteOffset/1440*DAY_W;
+  const target=Math.max(0, x - visW/2);
+  board.scrollTo({left:target, behavior:smooth?'smooth':'auto'});
+}
+function scrollTargetForSelected(smooth){
+  const dayIdx=parseInt(selectedDate.slice(8),10)-1;
+  let off=720;
+  if(selectedDate===iso(new Date())){
+    const n=new Date(); off=n.getHours()*60+n.getMinutes();
+  }
+  scrollToDay(dayIdx,smooth,off);
+}
+function renderAll(){ renderMonthLabel(); renderBoard(); renderPanel(); }
+function setMonth(y,m,sel=null,smooth=false){
+  const d=new Date(y,m,1); view={y:d.getFullYear(),m:d.getMonth()};
+  const prefix=`${view.y}-${p2(view.m+1)}-`;
+  if(sel){selectedDate=sel;}
+  else if(!selectedDate.startsWith(prefix)){ const t=iso(new Date()); selectedDate=t.startsWith(prefix)?t:prefix+'01'; }
+  renderAll(); scrollTargetForSelected(smooth);
+}
+function shiftMonth(delta){ setMonth(view.y,view.m+delta,null,true); }
+function goToday(){ const n=new Date(); setMonth(n.getFullYear(),n.getMonth(),iso(n),true); }
 
-            const lastOption = select.querySelector('option[value="custom"]');
-            Object.keys(customCategories).forEach(catKey => {
-                const cat = customCategories[catKey];
-                const opt = document.createElement('option');
-                opt.value = catKey;
-                opt.className = 'dynamic-custom';
-                opt.textContent = `${cat.emoji} ${cat.name}`;
-                select.insertBefore(opt, lastOption);
-            });
-        }
+function setSelectedPersons(list){ document.querySelectorAll('#personPick .popt').forEach(b=>b.classList.toggle('active',list.includes(b.dataset.p))); }
+function getSelectedPersons(){ return [...document.querySelectorAll('#personPick .popt.active')].map(b=>b.dataset.p); }
+document.querySelectorAll('#personPick .popt').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const active=[...document.querySelectorAll('#personPick .popt.active')];
+    if(btn.classList.contains('active') && active.length===1) return;
+    btn.classList.toggle('active');
+  });
+});
 
-        function populateTimeDropdowns() {
-            const startSelect = document.getElementById('startTime');
-            const endSelect = document.getElementById('endTime');
-            startSelect.innerHTML = '';
-            endSelect.innerHTML = '';
+function fillTimeSelects(){
+  const sI=$('#selStart'),sE=$('#selEnd');
+  for(let m=0;m<1440;m+=30) sI.appendChild(new Option(fmtMin(m),fmtMin(m)));
+  for(let m=30;m<=1440;m+=30) sE.appendChild(new Option(fmtEnd(m),fmtEnd(m)));
+}
+function fillCatSelect(sel){
+  const s=$('#selCat'); s.innerHTML='';
+  CATS.forEach(c=>s.appendChild(new Option(`${c.emoji} ${c.nombre}`,c.id)));
+  if(customCats.length){ const og=document.createElement('optgroup'); og.label='Personalizadas'; customCats.forEach(c=>og.appendChild(new Option(`${c.emoji} ${c.nombre}`,c.id))); s.appendChild(og); }
+  s.appendChild(new Option('➕ Crear Ítem Personalizado...','__new'));
+  s.value=(sel&&sel!=='__new')?sel:CATS[0].id;
+}
+function checkOvernightHint(){
+  $('#overnightHint').hidden = parseHM($('#selEnd').value) > parseHM($('#selStart').value);
+}
+function openModal(opts={}){
+  editingId=opts.ev?opts.ev.id:null;
+  const ev=opts.ev||{};
+  $('#fDate').value=ev.date||opts.date||selectedDate||iso(new Date());
+  setSelectedPersons([ev.person||opts.person||'ary']);
+  fillCatSelect(ev.cat||opts.cat);
+  $('#selStart').value=ev.start||opts.start||'08:00';
+  $('#selEnd').value=ev.end||opts.end||'09:00';
+  $('#fTitle').value=ev.title||''; $('#fNotes').value=ev.notes||'';
+  $('#btnDelete').hidden=!editingId;
+  $('#modalTitle').textContent=editingId?'✏️ Editar Bloque':'＋ Agendar Bloque';
+  $('#catNewBox').hidden=true;
+  checkOvernightHint();
+  $('#overlay').classList.add('open'); document.body.style.overflow='hidden';
+}
+function closeModal(){ $('#overlay').classList.remove('open'); document.body.style.overflow=''; editingId=null; }
 
-            for (let i = 0; i < 24; i++) {
-                for (let j = 0; j < 2; j++) {
-                    const h = String(i).padStart(2, '0');
-                    const m = j === 0 ? '00' : '30';
-                    const val = `${h}:${m}`;
-                    startSelect.appendChild(new Option(val, val));
-                    endSelect.appendChild(new Option(val, val));
-                }
-            }
-            endSelect.appendChild(new Option('23:59', '23:59'));
-        }
+$('#selCat').addEventListener('change',e=>{ $('#catNewBox').hidden=e.target.value!=='__new'; });
+$('#selStart').addEventListener('change',checkOvernightHint);
+$('#selEnd').addEventListener('change',checkOvernightHint);
+$('#btnAddCat').addEventListener('click',()=>{
+  const nombre=$('#iCatName').value.trim(); if(!nombre){toast('Ingresá un nombre para el ítem');return;}
+  const emoji=$('#iCatEmoji').value.trim()||'⭐', color=$('#iCatColor').value||'#5c7cfa';
+  const id='c'+Date.now().toString(36);
+  customCats.push({id,nombre,emoji,color}); persist(); fillCatSelect(id);
+  $('#catNewBox').hidden=true; $('#iCatName').value=''; $('#iCatEmoji').value='';
+  toast(`Categoría "${emoji} ${nombre}" creada ✔`);
+});
+$('#btnSaveEvent').addEventListener('click',()=>{
+  const date=$('#fDate').value; if(!date){toast('Elegí una fecha');return;}
+  const persons=getSelectedPersons(); if(!persons.length){toast('Seleccioná al menos una persona');return;}
+  const cat=$('#selCat').value; if(cat==='__new'){toast('Creá primero la categoría personalizada');return;}
+  const overnight = parseHM($('#selEnd').value) <= parseHM($('#selStart').value);
+  const catObj=getCat(cat);
+  const data={date,cat,start:$('#selStart').value,end:$('#selEnd').value,title:$('#fTitle').value.trim()||catObj.nombre,notes:$('#fNotes').value.trim()};
+  if(editingId){
+    const i=events.findIndex(x=>x.id===editingId);
+    if(i>-1){
+      events[i]={...events[i],...data,person:persons[0]};
+      for(let k=1;k<persons.length;k++) events.push({id:uid(),...data,person:persons[k]});
+    }
+  } else {
+    persons.forEach(p=>events.push({id:uid(),...data,person:p}));
+  }
+  persist(); closeModal();
+  const dt=parseISO(date); setMonth(dt.getFullYear(),dt.getMonth(),date,true);
+  let msg = persons.length>1 ? `Agendado para ${persons.map(p=>PERSONAS[p].nombre).join(' y ')}` : 'Bloque guardado';
+  if(overnight) msg += ' 🌙 continúa al día siguiente';
+  toast(msg+' ✔');
+});
+$('#btnDelete').addEventListener('click',()=>{ if(editingId){deleteEvent(editingId); closeModal();} });
+$('#btnCancel').addEventListener('click',closeModal);
+$('#btnClose').addEventListener('click',closeModal);
+$('#overlay').addEventListener('click',e=>{ if(e.target===$('#overlay')) closeModal(); });
 
-        function handleAddEvent(e) {
-            e.preventDefault();
-            const eventDate = document.getElementById('eventDate').value;
-            const person = document.getElementById('person').value;
-            let category = document.getElementById('categorySelect').value;
-            const startTime = document.getElementById('startTime').value;
-            const endTime = document.getElementById('endTime').value;
-            const title = document.getElementById('title').value;
-            const notes = document.getElementById('notes').value;
+$('#btnSaveJson').addEventListener('click',()=>{
+  const data={app:'Timeline Continuo – Agenda Compartida',exportado:new Date().toISOString(),eventos:events,categoriasPersonalizadas:customCats};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`agenda_${iso(new Date())}.json`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000); toast('JSON descargado 💾');
+});
+$('#btnLoadJson').addEventListener('click',()=>$('#fileLoad').click());
+$('#fileLoad').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const d=JSON.parse(reader.result); const raw=d.eventos||d.events;
+      if(!Array.isArray(raw)) throw 0;
+      events=raw.filter(x=>x&&x.date&&x.start&&x.end).map(normEv);
+      const cc=d.categoriasPersonalizadas||d.customCats; if(Array.isArray(cc)) customCats=cc;
+      persist(); const dt=parseISO(selectedDate); setMonth(dt.getFullYear(),dt.getMonth(),selectedDate,false); toast('JSON cargado 📂');
+    }catch(err){ toast('⚠️ Archivo JSON no válido'); }
+  };
+  reader.readAsText(file); e.target.value='';
+});
 
-            if (category === 'custom') {
-                const cName = document.getElementById('customName').value.trim() || 'Personalizado';
-                const cEmoji = document.getElementById('customEmoji').value.trim() || '📌';
-                const cColor = document.getElementById('customColor').value;
-                const cKey = 'custom_' + Date.now();
+$('#btnPrev').addEventListener('click',()=>shiftMonth(-1));
+$('#btnNext').addEventListener('click',()=>shiftMonth(1));
+$('#padPrev').addEventListener('click',()=>shiftMonth(-1));
+$('#padNext').addEventListener('click',()=>shiftMonth(1));
+$('#btnToday').addEventListener('click',goToday);
+$('#btnAdd').addEventListener('click',()=>openModal({date:selectedDate}));
+document.addEventListener('keydown',e=>{
+  if($('#overlay').classList.contains('open')){ if(e.key==='Escape') closeModal(); return; }
+  if(e.key==='ArrowLeft') shiftMonth(-1);
+  if(e.key==='ArrowRight') shiftMonth(1);
+});
 
-                customCategories[cKey] = { emoji: cEmoji, name: cName, color: cColor };
-                localStorage.setItem('timeline_custom_cats', JSON.stringify(customCategories));
-                renderCustomCategoryOptions();
-                category = cKey;
-            }
-
-            const startM = timeToMin(startTime);
-            const endM = timeToMin(endTime);
-
-            if (startM >= endM) {
-                const eventDay1 = { id: Date.now(), person, category, startTime, endTime: '23:59', title: `${title} (Noche)`, notes };
-                if (!appData[eventDate]) appData[eventDate] = [];
-                appData[eventDate].push(eventDay1);
-
-                let d = new Date(eventDate + "T00:00:00");
-                d.setDate(d.getDate() + 1);
-                const nextDate = d.toISOString().split('T')[0];
-
-                const eventDay2 = { id: Date.now() + 1, person, category, startTime: '00:00', endTime: endTime, title: `${title} (Cont.)`, notes };
-                if (!appData[nextDate]) appData[nextDate] = [];
-                appData[nextDate].push(eventDay2);
-            } else {
-                const newEvent = { id: Date.now(), person, category, startTime, endTime, title, notes };
-                if (!appData[eventDate]) appData[eventDate] = [];
-                appData[eventDate].push(newEvent);
-            }
-
-            localStorage.setItem('timeline_shared_data', JSON.stringify(appData));
-            eventModal.classList.remove('open');
-            document.getElementById('customBox').classList.remove('active');
-            document.getElementById('eventForm').reset();
-            render();
-        }
-
-        function deleteEvent(dateStr, id) {
-            if (confirm("¿Eliminar este bloque de la agenda?")) {
-                if (appData[dateStr]) {
-                    appData[dateStr] = appData[dateStr].filter(e => e.id !== id);
-                    localStorage.setItem('timeline_shared_data', JSON.stringify(appData));
-                    render();
-                }
-            }
-        }
-
-        function getCategoryData(key) {
-            if (baseCategories[key]) return baseCategories[key];
-            if (customCategories[key]) return customCategories[key];
-            return { emoji: '📌', name: 'Actividad', color: '#3b82f6' };
-        }
-
-        function render() {
-            canvasA.innerHTML = '';
-            canvasB.innerHTML = '';
-            notesFeed.innerHTML = '';
-            timeHeader.innerHTML = '';
-
-            document.querySelectorAll('.now-dot').forEach(el => el.remove());
-
-            const rangeDays = getRangeDays();
-            const totalWidthPx = 70 + (rangeDays.length * dayWidthPx) + 80;
-
-            timelineWrapper.style.width = `${totalWidthPx}px`;
-
-            // Botón Extensor Izquierdo
-            const btnLeft = document.createElement('div');
-            btnLeft.className = 'expand-btn left';
-            btnLeft.textContent = `← +${viewMode === 'weekly' ? 7 : 30}d`;
-            btnLeft.onclick = () => expandRange('left');
-            timelineWrapper.appendChild(btnLeft);
-
-            // Botón Extensor Derecho
-            const btnRight = document.createElement('div');
-            btnRight.className = 'expand-btn right';
-            btnRight.textContent = `+${viewMode === 'weekly' ? 7 : 30}d →`;
-            btnRight.onclick = () => expandRange('right');
-            timelineWrapper.appendChild(btnRight);
-
-            const todayStr = getTodayStr();
-
-            // Renderizar encabezados de días
-            rangeDays.forEach((dateStr) => {
-                const [y, m, d] = dateStr.split('-');
-                const isToday = dateStr === todayStr;
-
-                const dayHeader = document.createElement('div');
-                dayHeader.className = `time-slot-label ${isToday ? 'today-label' : ''}`;
-                dayHeader.style.width = `${dayWidthPx}px`;
-                dayHeader.textContent = `${isToday ? '📍 HOY ' : ''}${d}/${m}`;
-                timeHeader.appendChild(dayHeader);
-            });
-
-            // Punto de Tiempo Actual ÚNICO (Solo en la fecha exacta de hoy)
-            const todayIndex = rangeDays.indexOf(todayStr);
-            if (todayIndex !== -1) {
-                const now = new Date();
-                const minProgress = (now.getHours() * 60 + now.getMinutes()) / 1440;
-                const nowLeftPx = (todayIndex * dayWidthPx) + (minProgress * dayWidthPx);
-
-                const nowDot = document.createElement('div');
-                nowDot.className = 'now-dot';
-                nowDot.style.left = `${nowLeftPx}px`;
-                timeHeader.appendChild(nowDot);
-            }
-
-            // Renderizar Bloques y Feed
-            rangeDays.forEach((dateStr, dayIndex) => {
-                const dayEvents = (appData[dateStr] || []).sort((a,b) => timeToMin(a.startTime) - timeToMin(b.startTime));
-                const dayOffsetPx = 70 + (dayIndex * dayWidthPx);
-                const scaleFactor = dayWidthPx / 1440;
-
-                dayEvents.forEach(evt => {
-                    const cat = getCategoryData(evt.category);
-                    const startM = timeToMin(evt.startTime);
-                    const endM = timeToMin(evt.endTime);
-
-                    const leftPx = dayOffsetPx + (startM * scaleFactor);
-                    const widthPx = Math.max((endM - startM) * scaleFactor, 16);
-
-                    // Bloque gráfico
-                    const block = document.createElement('div');
-                    block.className = `block-item ${cat.class || ''}`;
-                    block.style.left = `${leftPx}px`;
-                    block.style.width = `${widthPx}px`;
-                    block.style.backgroundColor = cat.color;
-                    block.innerHTML = `<span>${cat.emoji}</span> <span>${evt.title}</span>`;
-
-                    if (evt.person === 'A') canvasA.appendChild(block);
-                    else canvasB.appendChild(block);
-
-                    // Tarjeta de feed
-                    const card = document.createElement('div');
-                    card.className = 'note-card';
-                    card.style.borderLeftColor = cat.color;
-                    card.innerHTML = `
-                        <div>
-                            <span class="note-tag">${evt.person === 'A' ? 'SUJETO A' : 'SUJETO B'} • ${dateStr}</span>
-                            <div class="note-title">${cat.emoji} ${evt.title}</div>
-                            <div class="note-time">${evt.startTime} hs a ${evt.endTime} hs</div>
-                            ${evt.notes ? `<div class="note-text">${evt.notes}</div>` : ''}
-                        </div>
-                        <button onclick="deleteEvent('${dateStr}', ${evt.id})" style="background:#ef4444; border:none; color:white; padding:0.3rem 0.5rem; border-radius:6px; font-size:0.75rem; cursor:pointer;">Borrar</button>
-                    `;
-                    notesFeed.appendChild(card);
-                });
-            });
-
-            document.getElementById('feedTitle').textContent = `Actividades del Rango (${rangeDays[0]} al ${rangeDays[rangeDays.length - 1]})`;
-        }
-
-        function exportData() {
-            const exportPayload = { events: appData, customCategories: customCategories };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload));
-            const a = document.createElement('a');
-            a.setAttribute("href", dataStr);
-            a.setAttribute("download", `agenda_timeline_backup.json`);
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-        }
-
-        init();
-    </script>
+fillTimeSelects();
+if(!loadStore()) seed();
+persist();
+renderAll();
+selectDate(iso(new Date()));
+requestAnimationFrame(()=>scrollTargetForSelected(false));
+</script>
 </body>
 </html>
